@@ -47,7 +47,7 @@ snoo$week = floor(as.numeric(snoo$week))+1
 ################### DATA SUMMARY
 
 nighttime = snoo[snoo$nighttime==1,]
-nighttime = snoo[snoo$week!=13,]
+nighttime = nighttime[nighttime$week!=13,]
 
 # average wakeups per night
 
@@ -75,30 +75,17 @@ nightsleep_wk = nightsleep_sum %>%
 # average total sleep
 df2 = melt(nightsleep_wk, id.vars='week')
 df2 = df2 %>% filter(variable == "avg_adj_total" | variable == "avg_total")
-levels(df2$variable) = c("Average Total", "Average Adjusted Total") 
+levels(df2$variable) = c("Average Total", "", "Average Adjusted Total", "", "", "", "") 
 
 ggplot(df2, aes(x=week, y=value, fill=variable)) +
   geom_bar(stat='identity', position='dodge') +
   xlab("week") + ylab("") +
   scale_x_continuous(breaks=seq(0,14,1)) +
+  scale_y_continuous(breaks=seq(0,12,2)) +
   geom_hline(yintercept = 8, color="red") +
   ggtitle("Average Total Sleep per Night") +
   theme(axis.title.y=element_text(angle=90, vjust=2)) +
   scale_fill_brewer(palette = "Paired")+
-  theme(plot.margin = unit(c(1,1,1,1), "cm"), legend.position="bottom")
-
-
-ggplot(data = df2, 
-       mapping = aes(x = week, group=1)) + 
-  geom_col(aes(y = avg_total, fill = "average total sleep")) +
-  scale_fill_manual(name = "", values = c("average total sleep" = "#7fcdbb")) +
-  geom_errorbar(aes(ymin=avg_total-stddev_total, ymax=avg_total+stddev_total), width=.2,
-                position=position_dodge(.9), alpha = 0.3, color = "dark blue") +
-  xlab("week") + ylab("") +
-  scale_x_continuous(breaks=seq(0,14,1)) +
-  geom_hline(yintercept = 8, color="red") +
-  ggtitle("Average Total Sleep per Night") +
-  theme(axis.title.y=element_text(angle=90, vjust=2)) +
   theme(plot.margin = unit(c(1,1,1,1), "cm"), legend.position="bottom")
 
 
@@ -116,4 +103,32 @@ ggplot(data = nightsleep_wk,
   theme(axis.title.y=element_text(angle=90, vjust=2)) +
   theme(plot.margin = unit(c(1,1,1,1), "cm"), legend.position="bottom")
 
+# stretches of sleep
+df2 = melt(nightsleep_wk, id.vars='week')
+df2 = df2 %>% filter(variable == "avg_sleep_stretch" | variable == "max_sleep_stretch")
+levels(df2$variable) = c("", "", "", "Avg Sleep Stretch", "Max Sleep Stretch", "", "") 
 
+ggplot(df2, aes(x=week, y=value, fill=variable)) +
+  geom_bar(stat='identity', position='dodge') +
+  xlab("week") + ylab("") +
+  scale_x_continuous(breaks=seq(0,14,1)) +
+  #geom_hline(yintercept = 8, color="red") +
+  ggtitle("Sleep Stretches") +
+  theme(axis.title.y=element_text(angle=90, vjust=2)) +
+  scale_fill_manual(values=c("#832388","#E3436B"))+
+  theme(plot.margin = unit(c(1,1,1,1), "cm"), legend.position="bottom")
+
+# time of wakeups
+nighttime$wakeup = hour(hms(nighttime$end_time))
+
+nightsleep_wakeup = nighttime %>%
+  group_by(wakeup) %>%
+  summarise(total = n())
+
+
+ggplot(nightsleep_wakeup, aes(x = wakeup, y = total, fill=total)) + 
+  geom_bar(stat='identity')+
+  coord_polar(start = -0.11, direction=1) + 
+  ggtitle("Wakeups by time of day") + 
+  scale_fill_continuous(low = 'blue', high = 'red') +
+  scale_x_continuous("", breaks = seq(0, 24), labels = seq(0, 24))
